@@ -36,7 +36,7 @@ def load_model(model=MODEL_PATH):
 def load_outputs():
     """Load model from disk"""
 
-    with open(MODEL_OUTPUT_PATH) as json_file:
+    with open(MODEL_OUTPUT_PATH, encoding='utf8') as json_file:
         data_loaded = json.load(json_file)
     return (data_loaded["f1_value"], data_loaded["threshold"])
 
