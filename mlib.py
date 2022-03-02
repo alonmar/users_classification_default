@@ -238,7 +238,7 @@ def predict(pX):
     # """Takes weight and predicts height"""
 
     clf = load_model()  # loadmodel
-    f1_value, threshold = load_outputs()
+    threshold = load_outputs()[1]
     #  NUMTDC_AV
     cond_list = [pX["NUMTDC_AV"] <= 3, pX["NUMTDC_AV"] > 3]
     choice_list = ["3 o menos TC", "Mas de 3 TC"]
