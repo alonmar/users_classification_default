@@ -28,11 +28,9 @@ def home():
 def predict():
     """Predict the user is a default"""
 
-    print(request.json)
     json_payload = request.json
     LOG.info(f"JSON payload: {json_payload}")
     df = pd.DataFrame(json_payload)
-    print(df)
     prediction = mlib.predict(df)
     return jsonify({"prediction": prediction})
 
