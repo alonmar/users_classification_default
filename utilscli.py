@@ -51,7 +51,7 @@ def mkrequest(perfil, host):
 
     click.echo(
         click.style(
-            f"Querying host {host} with Perfil: {perfil}", bg="green", fg="black"
+            f"Querying host {host} \n with Perfil:\n {perfil}", bg="green", fg="black"
         )
     )
 
