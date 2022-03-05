@@ -6,9 +6,10 @@ import pandas as pd
 
 # Models
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder, MinMaxScaler
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
+from sklearn.impute import SimpleImputer
 from sklearn.metrics import f1_score
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 
@@ -47,74 +48,10 @@ def data():
     return df
 
 
-def change_data_types(df):
-    """change data types for better manage"""
-
-    # cm
-    df["height"] = df["height"].str.extract("(\\d+)").astype(int)
-    # kg
-    df["weight"] = df["weight"].str.extract("(\\d+)").astype(int)
-    # euros
-    df["Value"] = pd.to_numeric(df["Value"].str.replace("€|\\.", "", regex=True))
-    df["Wage"] = pd.to_numeric(df["Wage"].str.replace("€|\\.", "", regex=True))
-
-    return df
-
-
-def get_position_zone(df):
-    """Transform 'preferred_positions' to 'position_zone'"""
-    position_zone = []
-    for x in df["preferred_positions"]:
-
-        listb = {"DEFENDING": 0, "MIDFIELD": 0, "ATTACKING": 0, "GOALKEEPER": 0}
-        for y in x:
-            if y in ["GK"]:
-                listb["GOALKEEPER"] = 1
-            else:
-                if y in ["LF", "RF", "CF", "ST"]:
-                    listb["ATTACKING"] = listb["ATTACKING"] + 1
-                if y in ["CAM", "RM", "RW", "CDM", "CM", "LM", "LW"]:
-                    listb["MIDFIELD"] = listb["MIDFIELD"] + 1
-                if y in ["LB", "LWB", "RB", "RWB", "CB"]:
-                    listb["DEFENDING"] = listb["DEFENDING"] + 1
-
-        # Keep the position with the highest value
-        position_zone.append(max(listb, key=listb.get))
-
-    df.loc[:, "position_zone"] = position_zone
-    df = df.drop(columns=["preferred_positions"])
-
-    return df
-
-
-def one_hot_coding(df):
-    """Conver columns type 'object' to one hot coding, then
-    delete leaving only the One hot coding"""
-    dummies_object = None
-    columns_type_object = []
-
-    for i, column_type in enumerate([str(d) for d in df.dtypes]):
-        if column_type == "object":
-            column_name = df.columns[i]
-            columns_type_object.append(column_name)
-
-            dummies = pd.get_dummies(df[column_name], prefix=column_name)
-
-            if dummies_object is None:
-                dummies_object = dummies
-            else:
-                dummies_object = pd.concat([dummies_object, dummies], axis=1)
-
-    df = df.drop(columns_type_object, axis="columns")
-    df = pd.concat([df, dummies_object], axis=1)
-    return df
-
-
 def clean_data():
     df = data()
     df = df.drop(columns=["ID"])
     df["nivelEstudio"] = df.nivelEstudio.replace("Maestr√≠a", "Maestria")
-    df["edad"] = df["edad"].fillna(df.edad.mean())
     # edad
     df["edad"] = df["edad"].fillna(df.edad.mean())
     # emailScore
@@ -134,20 +71,24 @@ def clean_data():
 
 def retrain(tsize=0.3, model_name="model_binary_class.dat.gz"):
     """Retrains the model
-    See this notebook: Baseball_Predictions_Export_Model.ipynb
+    See this notebook: users_classification.ipynb
     """
     df = clean_data()
     y = df["label"].values  # Target
-    # Transform to log
     X = df.drop(["label"], axis=1)  # Feature(s)
 
     X_train, X_valid, y_train, y_valid = train_test_split(
         X, y, test_size=tsize, random_state=100, stratify=y
     )
 
-    model = LogisticRegression()
+    model = RandomForestClassifier(random_state=3)  
 
-    numeric_pipeline = Pipeline(steps=[("scale", MinMaxScaler())])
+    numeric_pipeline = Pipeline(
+        steps=[
+            ('impute', SimpleImputer(strategy='mean')),
+            ("scale", MinMaxScaler())
+            ]
+        )
 
     categorical_pipeline = Pipeline(
         steps=[("one-hot", OneHotEncoder(handle_unknown="ignore", sparse=False))]
@@ -189,31 +130,12 @@ def retrain(tsize=0.3, model_name="model_binary_class.dat.gz"):
 
 def get_f1_by_threshold(threshold, model_pipline, X_valid, y_valid):
     y_pred_pos = model_pipline.predict_proba(X_valid)[
-        :, 1
+        :, 0
     ]  # probabilidades de pertenecer a la clase 1
     y_pred_class = y_pred_pos > threshold
 
     return f1_score(y_valid, y_pred_class)
 
-
-def scale_input(pX, df):
-    """Scales values for input"""
-    df = df.drop(columns=["Value"])
-    input_scaler = StandardScaler().fit(df)
-    scaled_input = input_scaler.transform(pX)
-    return scaled_input
-
-
-def scale_target(target, df):
-    """Scales Target 'y' Value"""
-
-    y = df["Value"].values  # Target
-    y = np.log(y)
-    y = y.reshape(-1, 1)  # Reshape
-    scaler = StandardScaler()
-    y_scaler = scaler.fit(y)
-    scaled_target = y_scaler.inverse_transform(target)
-    return scaled_target
 
 
 def human_readable_payload(pred_proba, threshold):
@@ -221,7 +143,7 @@ def human_readable_payload(pred_proba, threshold):
 
     pred_class = pred_proba > threshold
 
-    if pred_class == 1:
+    if pred_class:
         pred_class = "Moroso"
     else:
         pred_class = "No Moroso"
@@ -238,8 +160,8 @@ def predict(pX):
     # """Takes weight and predicts height"""
 
     clf = load_model()  # loadmodel
-    threshold = load_outputs()[1]
-    #  NUMTDC_AV
+    threshold = load_outputs()[1] # Load threshold model
+    # convert to categorical NUMTDC_AV
     cond_list = [pX["NUMTDC_AV"] <= 3, pX["NUMTDC_AV"] > 3]
     choice_list = ["3 o menos TC", "Mas de 3 TC"]
 
@@ -247,6 +169,6 @@ def predict(pX):
     # 'Proporción de gasto'
     pX["Proporción de gasto"] = pX["gastosMensuales"] / pX["ingresosMensuales"]
 
-    pred_proba = float(clf.predict_proba(pX)[:, 1])  #
+    pred_proba = float(clf.predict_proba(pX)[:, 0])  #
     result = human_readable_payload(pred_proba, threshold)
     return result
