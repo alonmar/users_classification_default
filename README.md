@@ -7,7 +7,7 @@
 ## Assets in repo
 
 * `requirements.txt`:  [View requirements.txt](https://github.com/alonmar/users_classification_default/blob/main/requirements.txt)
-* `users_classification.ipynb`: [View Futbol_Predictions_Export_Model.ipynb](https://github.com/alonmar/users_classification_default/blob/main/users_classification.ipynb) EDA and Export model
+* `users_classification.ipynb`: [View users_classification.ipynb](https://github.com/alonmar/users_classification_default/blob/main/users_classification.ipynb) EDA and Export model
 * `model_binary_class.dat.gz`: [View model_binary_class.dat.gz](https://github.com/alonmar/users_classification_default/blob/main/model/model_binary_class.dat.gz) Exported Model 
 * `app.py`:  [View app.py](https://github.com/alonmar/users_classification_default/blob/main/app.py) Flask api
 * `mlib.py`:  [View mlib.py](https://github.com/alonmar/users_classification_default/blob/main/mlib.py) Model Handling Library
