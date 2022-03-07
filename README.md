@@ -21,7 +21,7 @@
 ## CLI Tools
 
 There are two cli tools.  First, the main `cli.py` is the endpoint that serves out predictions.
-To predict the height of an MLB player you use the following: *(if you don't run on Windows delete the backslash "`\`")*
+To predict if a user is default you use the following: *(if you don't run on Windows delete the backslash "`\`")*
 
 `$ python cli.py --perfil ' [{\"edad\": 25, \"montoSolicitado\": 30000, \"montoOtorgado\": 23000, \"genero\": \"Hombre\", \"quincenal\": 1, \"dependientesEconomicos\": 3, \"nivelEstudio\": \"Universidad\", \"fico\": 569, \"ingresosMensuales\": 15000, \"gastosMensuales\": 4500, \"emailScore\": 0, \"browser\": \"CHROME_MOBILE\", \"NUMTDC_AV\": 0}]'`
 
